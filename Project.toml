@@ -1,0 +1,44 @@
+name = "Panelest"
+uuid = "8a2d1f95-46f9-4279-b1d5-bcafb618cf2e"
+version = "0.1.0"
+
+[deps]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+FixedEffectModels = "9d5cd8c9-2029-5cab-9928-427838db53e3"
+FixedEffects = "c8885935-8500-56a7-9867-7708b20db0eb"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+StatsAPI = "82ae8749-77ed-4fe6-ae5f-f523153014b0"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+StatsFuns = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
+StatsModels = "3eaba693-59b7-5ba5-a881-562e759f1c8d"
+Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
+Vcov = "ec2bfdc2-55df-4fc9-b9ae-4958c2cf2486"
+
+[compat]
+DataFrames = "1"
+Distributions = "0.25"
+FixedEffectModels = "1.13"
+FixedEffects = "3"
+StatsAPI = "1"
+StatsBase = "0.34"
+StatsFuns = "1"
+StatsModels = "0.7"
+Tables = "1"
+Vcov = "0.8"
+julia = "1"
+
+[weakdeps]
+DBInterface = "a10d1c49-ea27-50fb-97bc-226ecd187cd6"
+DuckDB = "d2f5444f-75bc-4fdf-ac35-56f514c445e1"
+
+[extensions]
+DuckDBExt = ["DuckDB", "DBInterface"]
+
+[extras]
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test", "Random"]
