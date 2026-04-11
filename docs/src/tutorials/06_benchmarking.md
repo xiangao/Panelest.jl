@@ -84,20 +84,20 @@ y ~ x1 + x2 | indiv_id + firm_id_difficult + year    (difficult)
 
 ## Implementation Comparison
 
-| | fixest | Panelest.jl |
-|-|--------|-------------|
-| Language | R + C++ (Rcpp) | Pure Julia |
-| FE absorption | Custom C++ (Irons-Tuck) | Ported Julia (Irons-Tuck) |
-| Poisson solver | Berge concentrated likelihood | Concentrated likelihood + 2-FE cell trick |
-| Parallelism | Multi-threaded C++ | Julia `Threads.@threads` |
+| Aspect          | fixest                          | Panelest.jl                              |
+|-----------------|---------------------------------|------------------------------------------|
+| Language        | R + C++ (Rcpp)                  | Pure Julia                               |
+| FE absorption   | Custom C++ (Irons-Tuck)         | Ported Julia (Irons-Tuck)                |
+| Poisson solver  | Berge concentrated likelihood   | Concentrated likelihood + 2-FE cell trick|
+| Parallelism     | Multi-threaded C++              | Julia `Threads.@threads`                 |
 
 ## Trade-offs
 
-| | fixest | Panelest.jl |
-|-|--------|-------------|
-| Maturity | Highly mature, production-ready | Newer, active development |
-| Features | Rich (stepwise, DiD, export) | Core estimators |
-| Ecosystem | R (visualization, tables) | Julia (composability, speed) |
+| Aspect     | fixest                          | Panelest.jl                |
+|------------|---------------------------------|----------------------------|
+| Maturity   | Highly mature, production-ready | Newer, active development  |
+| Features   | Rich (stepwise, DiD, export)    | Core estimators            |
+| Ecosystem  | R (visualization, tables)       | Julia (composability, speed)|
 
 ## Methodology
 
