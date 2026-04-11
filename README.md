@@ -54,14 +54,16 @@ feols(df, @formula(y ~ x + fe(id) + fe(year)), vcov = Vcov.cluster(:id))
 
 ## Tutorials
 
+Full documentation: **https://xiangao.github.io/Panelest.jl/dev/**
+
 | Tutorial | Description |
 |----------|-------------|
-| [Getting Started](docs/src/tutorials/01_getting_started.md) | Installation, basic syntax, fixed effects |
-| [Non-Linear Models](docs/src/tutorials/02_nonlinear_models.md) | Poisson, Logit, Probit, Conditional Logit |
-| [fixest Examples](docs/src/tutorials/03_fixest_examples.md) | Side-by-side comparison with R's fixest |
-| [Staggered DiD](docs/src/tutorials/04_staggered_did.md) | Difference-in-differences with staggered adoption |
-| [DuckDB Integration](docs/src/tutorials/05_duckdb_integration.md) | Out-of-core estimation from database tables |
-| [Benchmarking](docs/src/tutorials/06_benchmarking.md) | Performance comparison vs fixest (R/C++) |
+| [Getting Started](https://xiangao.github.io/Panelest.jl/dev/tutorials/01_getting_started/) | Installation, basic syntax, fixed effects |
+| [Non-Linear Models](https://xiangao.github.io/Panelest.jl/dev/tutorials/02_nonlinear_models/) | Poisson, Logit, Probit, Conditional Logit |
+| [fixest Examples](https://xiangao.github.io/Panelest.jl/dev/tutorials/03_fixest_examples/) | Side-by-side comparison with R's fixest |
+| [Staggered DiD](https://xiangao.github.io/Panelest.jl/dev/tutorials/04_staggered_did/) | Difference-in-differences with staggered adoption |
+| [DuckDB Integration](https://xiangao.github.io/Panelest.jl/dev/tutorials/05_duckdb_integration/) | Out-of-core estimation from database tables |
+| [Benchmarking](https://xiangao.github.io/Panelest.jl/dev/tutorials/06_benchmarking/) | Performance comparison vs fixest (R/C++) |
 
 ## Instrumental Variables
 

@@ -15,7 +15,11 @@ makedocs(
         ],
         "Reference" => "reference.md",
     ],
-    remotes = nothing,
-    repo = "",
     warnonly = true,
+)
+
+deploydocs(
+    repo = "github.com/xiangao/Panelest.jl.git",
+    devbranch = "main",
+    push_preview = false,
 )
