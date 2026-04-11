@@ -54,16 +54,14 @@ feols(df, @formula(y ~ x + fe(id) + fe(year)), vcov = Vcov.cluster(:id))
 
 ## Tutorials
 
-Build the docs locally with `julia --project=docs docs/make.jl`, then open `docs/build/index.html`.
-
 | Tutorial | Description |
 |----------|-------------|
-| [Getting Started](docs/build/tutorials/01_getting_started/index.html) | Installation, basic syntax, fixed effects |
-| [Non-Linear Models](docs/build/tutorials/02_nonlinear_models/index.html) | Poisson, Logit, Probit, Conditional Logit |
-| [fixest Examples](docs/build/tutorials/03_fixest_examples/index.html) | Side-by-side comparison with R's fixest |
-| [Staggered DiD](docs/build/tutorials/04_staggered_did/index.html) | Difference-in-differences with staggered adoption |
-| [DuckDB Integration](docs/build/tutorials/05_duckdb_integration/index.html) | Out-of-core estimation from database tables |
-| [Benchmarking](docs/build/tutorials/06_benchmarking/index.html) | Performance comparison vs fixest (R/C++) |
+| [Getting Started](docs/src/tutorials/01_getting_started.md) | Installation, basic syntax, fixed effects |
+| [Non-Linear Models](docs/src/tutorials/02_nonlinear_models.md) | Poisson, Logit, Probit, Conditional Logit |
+| [fixest Examples](docs/src/tutorials/03_fixest_examples.md) | Side-by-side comparison with R's fixest |
+| [Staggered DiD](docs/src/tutorials/04_staggered_did.md) | Difference-in-differences with staggered adoption |
+| [DuckDB Integration](docs/src/tutorials/05_duckdb_integration.md) | Out-of-core estimation from database tables |
+| [Benchmarking](docs/src/tutorials/06_benchmarking.md) | Performance comparison vs fixest (R/C++) |
 
 ## Instrumental Variables
 
