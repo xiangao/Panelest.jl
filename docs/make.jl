@@ -5,16 +5,17 @@ makedocs(
     modules = [Panelest],
     pages = [
         "Home" => "index.md",
-        "Vignettes" => [
-            "Getting Started" => "vignettes/01_getting_started.md",
-            "Non-Linear Models" => "vignettes/02_nonlinear_models.md",
-            "fixest Examples" => "vignettes/03_fixest_examples.md",
-            "Staggered DiD" => "vignettes/04_staggered_did.md",
-            "DuckDB Integration" => "vignettes/05_duckdb_integration.md"
+        "Tutorials" => [
+            "Getting Started"    => "tutorials/01_getting_started.md",
+            "Non-Linear Models"  => "tutorials/02_nonlinear_models.md",
+            "fixest Examples"    => "tutorials/03_fixest_examples.md",
+            "Staggered DiD"      => "tutorials/04_staggered_did.md",
+            "DuckDB Integration" => "tutorials/05_duckdb_integration.md",
+            "Benchmarking"       => "tutorials/06_benchmarking.md",
         ],
-        "Reference" => "reference.md"
+        "Reference" => "reference.md",
     ],
     remotes = nothing,
     repo = "",
-    warnonly = true
+    warnonly = true,
 )

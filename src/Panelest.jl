@@ -12,7 +12,7 @@ using Vcov
 using Tables
 using Distributions
 
-export fepois, felogit, feprobit, feols, feglm, fe, clogit, cre
+export fepois, felogit, feprobit, feols, feglm, fe, clogit, cre, feiv
 
 # --- Formula Parsing ---
 
@@ -163,6 +163,8 @@ end
 
 # --- Core IRLS Engine ---
 
+include("direct_fe.jl")
+include("fe_convergence.jl")
 include("irls.jl")
 include("poisson.jl")
 include("logit.jl")
@@ -170,6 +172,7 @@ include("probit.jl")
 include("clogit.jl")
 include("ols.jl")
 include("cre.jl")
+include("iv.jl")
 
 # --- API ---
 

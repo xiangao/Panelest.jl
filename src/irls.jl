@@ -23,12 +23,11 @@ function irls_fit(y::AbstractVector{<:Real}, X::AbstractMatrix{Float64}, fes::Ab
     Z_init_X = hcat(z_orig, X)
     init_cols = collect(eachcol(Z_init_X))
     if has_fes
-        feM_init = AbstractFixedEffectSolver{Float64}(fes, Weights(weights), Val{:cpu})
-        solve_residuals!(init_cols, feM_init; tol = 1e-4, maxiter = 100)
+        solve_residuals_fixest!(init_cols, fes, weights; tol = 1e-4, maxiter = 100)
     end
     
-    X_init_resid = view(Z_init_X, :, 2:p+1)
-    Z_init_resid = view(Z_init_X, :, 1)
+    X_init_resid = hcat(init_cols[2:p+1]...)
+    Z_init_resid = init_cols[1]
     # Use robust solver for initialization
     # XtWX weighted by frequency weights
     XtWX_init = zeros(p, p)
@@ -121,9 +120,8 @@ function irls_fit(y::AbstractVector{<:Real}, X::AbstractMatrix{Float64}, fes::Ab
         total_w .= weights .* w_val
         
         if has_fes
-            FixedEffects.update_weights!(feM, Weights(total_w))
             current_fixef_tol = i < 3 ? max(1e-4, fixef_tol * 100) : fixef_tol
-            _, iters, convergeds = solve_residuals!(cols, feM; tol = current_fixef_tol, maxiter = fixef_maxiter)
+            solve_residuals_fixest!(cols, fes, total_w; tol = current_fixef_tol, maxiter = fixef_maxiter)
         end
         
         z_resid = view(Z_X, :, 1)
@@ -232,9 +230,8 @@ function irls_fit(y::AbstractVector{<:Real}, X::AbstractMatrix{Float64}, fes::Ab
     
     X_resid_final = copy(X)
     if has_fes
-        feM_final = AbstractFixedEffectSolver{Float64}(fes, Weights(total_w), Val{:cpu})
         cols_final = collect(eachcol(X_resid_final))
-        solve_residuals!(cols_final, feM_final; tol = fixef_tol, maxiter = fixef_maxiter)
+        solve_residuals_fixest!(cols_final, fes, total_w; tol = fixef_tol, maxiter = fixef_maxiter)
     end
 
     return (beta = beta, mu = mu, eta = eta, converged = converged, iterations = iterations, residuals = y .- mu, XtWX = XtWX, X_resid = X_resid_final)
