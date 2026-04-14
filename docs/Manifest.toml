@@ -2,7 +2,7 @@
 
 julia_version = "1.12.5"
 manifest_format = "2.0"
-project_hash = "789545aa853271b35e91875197b49e16931d5c3a"
+project_hash = "c56607ae36f77ca0f5019430ca16563122252204"
 
 [[deps.ANSIColoredPrinters]]
 git-tree-sha1 = "574baf8110975760d391c710b6341da1afa48d8c"
@@ -32,11 +32,11 @@ version = "1.11.0"
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 version = "1.11.0"
 
-[[deps.BenchmarkTools]]
-deps = ["Compat", "JSON", "Logging", "Printf", "Profile", "Statistics", "UUIDs"]
-git-tree-sha1 = "7fecfb1123b8d0232218e2da0c213004ff15358d"
-uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
-version = "1.6.3"
+[[deps.BitIntegers]]
+deps = ["Random"]
+git-tree-sha1 = "091d591a060e43df1dd35faab3ca284925c48e46"
+uuid = "c3b6d118-76ef-56ca-8cc7-ebb389d030a1"
+version = "0.3.7"
 
 [[deps.CodecZlib]]
 deps = ["TranscodingStreams", "Zlib_jll"]
@@ -68,6 +68,11 @@ version = "1.3.0+1"
 git-tree-sha1 = "249fe38abf76d48563e2f4556bebd215aa317e15"
 uuid = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
 version = "4.1.1"
+
+[[deps.DBInterface]]
+git-tree-sha1 = "a444404b3f94deaa43ca2a58e18153a82695282b"
+uuid = "a10d1c49-ce27-4219-8d33-6db1a4562965"
+version = "2.6.1"
 
 [[deps.DataAPI]]
 git-tree-sha1 = "abe83f3a2f1b857aac70ef8b269080af17764bbe"
@@ -128,6 +133,18 @@ deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 version = "1.7.0"
 
+[[deps.DuckDB]]
+deps = ["DBInterface", "Dates", "DuckDB_jll", "FixedPointDecimals", "Tables", "UUIDs", "WeakRefStrings"]
+git-tree-sha1 = "b0e167d2ccfd32d59b7990ec1ccca3dcedc1f5da"
+uuid = "d2f5444f-75bc-4fdf-ac35-56f514c445e1"
+version = "1.5.1"
+
+[[deps.DuckDB_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "4f4bc0e8be87d6ab270a07caa182808958bff9fe"
+uuid = "2cbbab25-fc8b-58cf-88d4-687a02676033"
+version = "1.5.2+0"
+
 [[deps.Expat_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "27af30de8b5445644e8ffe3bcb0d72049c089cf1"
@@ -175,6 +192,12 @@ version = "3.1.0"
     [deps.FixedEffects.weakdeps]
     CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
     Metal = "dde4c033-4e86-420c-a63e-0dd931031962"
+
+[[deps.FixedPointDecimals]]
+deps = ["BitIntegers", "Parsers"]
+git-tree-sha1 = "41d3a5de0eab320cc04833a373f0fcb3640073d5"
+uuid = "fb4d412d-6eee-574d-9565-ede6634db7b0"
+version = "0.6.5"
 
 [[deps.Future]]
 deps = ["Random"]
@@ -416,17 +439,14 @@ weakdeps = ["StatsBase"]
     StatsBaseExt = "StatsBase"
 
 [[deps.Panelest]]
-deps = ["BenchmarkTools", "DataFrames", "Distributions", "FixedEffectModels", "FixedEffects", "LinearAlgebra", "Statistics", "StatsAPI", "StatsBase", "StatsFuns", "StatsModels", "Tables", "Vcov"]
-path = ".."
-uuid = "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d"
+deps = ["DataFrames", "Distributions", "FixedEffectModels", "FixedEffects", "LinearAlgebra", "Statistics", "StatsAPI", "StatsBase", "StatsFuns", "StatsModels", "Tables", "Vcov"]
+path = "/home/xao/projects/software/Panelest.jl"
+uuid = "8a2d1f95-46f9-4279-b1d5-bcafb618cf2e"
 version = "0.1.0"
+weakdeps = ["DBInterface", "DuckDB"]
 
     [deps.Panelest.extensions]
     DuckDBExt = ["DuckDB", "DBInterface"]
-
-    [deps.Panelest.weakdeps]
-    DBInterface = "a10d1c49-ea27-50fb-97bc-226ecd187cd6"
-    DuckDB = "d2f5444f-75bc-4fdf-ac35-56f514c445e1"
 
 [[deps.Parsers]]
 deps = ["Dates", "PrecompileTools", "UUIDs"]
@@ -476,11 +496,6 @@ version = "3.3.2"
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
-version = "1.11.0"
-
-[[deps.Profile]]
-deps = ["StyledStrings"]
-uuid = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
 version = "1.11.0"
 
 [[deps.PtrArrays]]
@@ -702,6 +717,12 @@ deps = ["Combinatorics", "GroupedArrays", "LinearAlgebra", "PrecompileTools", "S
 git-tree-sha1 = "667e09e4c9774c40614f3597d4907ed6249ac997"
 uuid = "ec2bfdc2-55df-4fc9-b9ae-4958c2cf2486"
 version = "0.8.3"
+
+[[deps.WeakRefStrings]]
+deps = ["DataAPI", "InlineStrings", "Parsers"]
+git-tree-sha1 = "b1be2855ed9ed8eac54e5caff2afcdb442d52c23"
+uuid = "ea10d353-3f73-51f8-a26c-33c1cb351aa5"
+version = "1.4.2"
 
 [[deps.Zlib_jll]]
 deps = ["Libdl"]

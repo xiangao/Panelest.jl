@@ -1,5 +1,9 @@
 # DuckDB Integration with Panelest.jl
 
+```@meta
+CurrentModule = Panelest
+```
+
 `Panelest.jl` features first-class integration with **DuckDB**. This allows you to estimate high-dimensional fixed effects models on datasets that are much larger than your available RAM by leveraging DuckDB's analytical engine for data compression.
 
 ## Why use DuckDB with Panelest?
@@ -14,6 +18,7 @@ To use this feature, simply pass a `DuckDB.Connection` and the name of your tabl
 
 ```julia
 using DuckDB, Panelest, StatsModels
+using DBInterface
 
 # 1. Connect to DuckDB
 db = DuckDB.DB("my_data.duckdb")
@@ -57,20 +62,6 @@ println("Running Poisson regression on 100,000 rows via DuckDB...")
 model = fepois(con, "panel_data", @formula(y ~ x + fe(id) + fe(year)))
 
 println(model)
-```
-
-**Output:**
-```text
-Running Poisson regression on 100,000 rows via DuckDB...
-Panelest Model: poisson
-Number of obs: 100000
-Converged: true
-Iterations: 5
-────────────────────────────────────────────────────────────────────────
-               Estimate  Std. Error  z value  Pr(>|z|)  Lower 95%  Upper 95%
-────────────────────────────────────────────────────────────────────────
-x              0.505303    0.002408   209.84    <1e-99   0.500584   0.510022
-────────────────────────────────────────────────────────────────────────
 ```
 
 ## How it Works

@@ -1,3 +1,10 @@
 [deps]
+DBInterface = "a10d1c49-ce27-4219-8d33-6db1a4562965"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+DuckDB = "d2f5444f-75bc-4fdf-ac35-56f514c445e1"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-Panelest = "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d"
+Panelest = "8a2d1f95-46f9-4279-b1d5-bcafb618cf2e"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+StatsModels = "3eaba693-59b7-5ba5-a881-562e759f1c8d"
+Vcov = "ec2bfdc2-55df-4fc9-b9ae-4958c2cf2486"
