@@ -1,6 +1,6 @@
 name = "Panelest"
 uuid = "8a2d1f95-46f9-4279-b1d5-bcafb618cf2e"
-version = "0.1.1"
+version = "0.1.2"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"

@@ -13,6 +13,7 @@ using Tables
 using Distributions
 
 export fepois, felogit, feprobit, feols, feglm, fe, clogit, cre, feiv
+export emfx, dataset
 
 # --- Formula Parsing ---
 
@@ -173,6 +174,7 @@ include("clogit.jl")
 include("ols.jl")
 include("cre.jl")
 include("iv.jl")
+include("etwfe.jl")
 
 # --- API ---
 
