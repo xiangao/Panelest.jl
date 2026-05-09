@@ -1,6 +1,6 @@
 name = "Panelest"
 uuid = "8a2d1f95-46f9-4279-b1d5-bcafb618cf2e"
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
@@ -28,13 +28,6 @@ StatsModels = "0.7"
 Tables = "1"
 Vcov = "0.8"
 julia = "1"
-
-[weakdeps]
-DBInterface = "a10d1c49-ea27-50fb-97bc-226ecd187cd6"
-DuckDB = "d2f5444f-75bc-4fdf-ac35-56f514c445e1"
-
-[extensions]
-DuckDBExt = ["DuckDB", "DBInterface"]
 
 [extras]
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
