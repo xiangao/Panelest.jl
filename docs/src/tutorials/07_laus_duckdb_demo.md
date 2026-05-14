@@ -163,21 +163,29 @@ Coefficients
    2 | log unemployment      0.321523  0.0256071
 
 Timing
-4x2 DataFrame
- Row | step                     seconds
-     | String                   Float64
------+----------------------------------
-   1 | DuckDB panel build          3.99
-   2 | feols unemployment rate     6.0
-   3 | feols log unemployment      0.5
-   4 | total in-process           14.62
+6x2 DataFrame
+ Row | step                                      seconds
+     | String                                    Float64
+-----+---------------------------------------------------
+   1 | DuckDB panel build                           3.93
+   2 | Panelest first feols, unemployment rate      5.87
+   3 | Panelest warm median, unemployment rate      0.4
+   4 | Panelest first feols, log unemployment       0.4
+   5 | Panelest warm median, log unemployment       0.44
+   6 | total in-process                            16.67
 ```
 
-The same run took 21.56 seconds by shell wall clock. The difference is Julia
-startup, package loading, and related overhead outside the timed body of the script.
-The first `feols` call also includes method compilation, which is why the second
-model is much faster in the same process. Timings vary by machine, storage, and
-whether Julia has already precompiled the relevant packages.
+The same run took about 24 seconds by shell wall clock. That command includes Julia
+startup, package loading, first-call compilation, panel construction, and the extra
+repeat regressions used to measure warm performance. The `total in-process` row is
+therefore a diagnostic total for this script, not the best cross-language
+comparison.
+
+For the estimator comparison, the important Julia rows are the warm rows. The first
+`Panelest.feols` call in a Julia session pays method compilation and setup costs.
+After those methods are compiled, the same regression path runs in about `0.40`
+seconds for the unemployment-rate model and `0.44` seconds for the log-unemployment
+model in this local run.
 
 The R/data.table/fixest baseline produced the same panel size and same point
 estimates:
@@ -201,13 +209,25 @@ Timing
 shell_wall_seconds 11.61
 ```
 
-In this local run, DuckDB built the analysis table faster than the R flat-file
-pipeline (`3.99` seconds vs. `10.00` seconds). The R script was faster end to end
-because `fixest` estimated these two regressions much faster and R had less
-startup/package-loading overhead in this run. The point estimates agree; the
-reported standard errors differ because the two demos currently use their
-packages' default IID variance calculations after different internal estimation
-paths.
+With compiled Julia code, the comparison has three pieces:
+
+| Piece | Julia + DuckDB + Panelest | R + data.table + fixest |
+| --- | ---: | ---: |
+| Build the county-month panel | 3.93 sec | 10.00 sec |
+| First regression, after Julia compilation | 0.40 sec | 0.07 sec |
+| Second regression, after Julia compilation | 0.44 sec | 0.06 sec |
+| Panel build plus warm regressions | 4.77 sec | 10.13 sec |
+
+The interpretation is: DuckDB is doing the heavy flat-file work faster than the
+R/data.table baseline in this example, while `fixest` is still faster on these
+already-prepared fixed-effect regressions. If you compare an already-started,
+compiled Julia session, the DuckDB panel build plus the two warm `Panelest.feols`
+calls is about `4.77` seconds here. If you compare cold command-line scripts, Julia
+startup and first-call compilation are part of the user-visible wall time.
+
+The point estimates agree across the two implementations. The reported standard
+errors differ because the two demos currently use their packages' default IID
+variance calculations after different internal estimation paths.
 
 The documentation shows captured output instead of executing the LAUS script during
 the docs build, because GitHub Actions does not have the local BLS files.

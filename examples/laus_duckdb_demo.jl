@@ -2,6 +2,7 @@ using DataFrames
 using DBInterface
 using DuckDB
 using Panelest
+using Statistics
 using StatsModels
 
 const LAUS_DIR = get(ENV, "LAUS_DIR", expanduser("~/projects/data/laus"))
@@ -9,6 +10,20 @@ const START_YEAR = parse(Int, get(ENV, "LAUS_START_YEAR", "2015"))
 const END_YEAR = parse(Int, get(ENV, "LAUS_END_YEAR", "2025"))
 
 sqlpath(path) = replace(path, "'" => "''")
+
+function timed_call(f)
+    result = Ref{Any}()
+    seconds = @elapsed result[] = f()
+    return result[], seconds
+end
+
+function repeated_seconds(f; reps = 3)
+    seconds = Float64[]
+    for _ in 1:reps
+        push!(seconds, @elapsed f())
+    end
+    return seconds
+end
 
 function build_laus_panel!(con; laus_dir = LAUS_DIR, start_year = START_YEAR, end_year = END_YEAR)
     series_path = sqlpath(joinpath(laus_dir, "la.series"))
@@ -112,8 +127,15 @@ function main()
     println(summary)
 
     println("\nModel 1: county unemployment rate on labor-force size, county FE, and year-month FE")
-    model_rate_seconds = @elapsed begin
-        model_rate = feols(
+    model_rate, model_rate_first_seconds = timed_call() do
+        feols(
+            con,
+            "laus_panel",
+            @formula(unemp_rate ~ log_labor_force + fe(county_id) + fe(year_month)),
+        )
+    end
+    model_rate_repeat_seconds = repeated_seconds(reps = 3) do
+        feols(
             con,
             "laus_panel",
             @formula(unemp_rate ~ log_labor_force + fe(county_id) + fe(year_month)),
@@ -122,8 +144,15 @@ function main()
     println(model_rate)
 
     println("\nModel 2: log unemployed workers on labor-force size, county FE, and year-month FE")
-    model_count_seconds = @elapsed begin
-        model_count = feols(
+    model_count, model_count_first_seconds = timed_call() do
+        feols(
+            con,
+            "laus_panel",
+            @formula(log_unemployment ~ log_labor_force + fe(county_id) + fe(year_month)),
+        )
+    end
+    model_count_repeat_seconds = repeated_seconds(reps = 3) do
+        feols(
             con,
             "laus_panel",
             @formula(log_unemployment ~ log_labor_force + fe(county_id) + fe(year_month)),
@@ -141,8 +170,22 @@ function main()
     total_seconds = time() - total_start
     println("\nTiming")
     println(DataFrame(
-        step = ["DuckDB panel build", "feols unemployment rate", "feols log unemployment", "total in-process"],
-        seconds = round.([build_seconds, model_rate_seconds, model_count_seconds, total_seconds]; digits = 2),
+        step = [
+            "DuckDB panel build",
+            "Panelest first feols, unemployment rate",
+            "Panelest warm median, unemployment rate",
+            "Panelest first feols, log unemployment",
+            "Panelest warm median, log unemployment",
+            "total in-process",
+        ],
+        seconds = round.([
+            build_seconds,
+            model_rate_first_seconds,
+            median(model_rate_repeat_seconds),
+            model_count_first_seconds,
+            median(model_count_repeat_seconds),
+            total_seconds,
+        ]; digits = 2),
     ))
 end
 
