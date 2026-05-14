@@ -12,6 +12,7 @@ makedocs(
             "Staggered DiD"      => "tutorials/04_staggered_did.md",
             "DuckDB Integration" => "tutorials/05_duckdb_integration.md",
             "Benchmarking"       => "tutorials/06_benchmarking.md",
+            "LAUS DuckDB Demo"    => "tutorials/07_laus_duckdb_demo.md",
         ],
         "Reference" => "reference.md",
     ],

@@ -40,7 +40,7 @@ function _duck_compress(con, table, formula)
     query = """
     SELECT $group_cols, 
            CAST(SUM($lhs_var) AS DOUBLE) / COUNT(*) as _y_mean, 
-           COUNT(*) as _weight
+           CAST(COUNT(*) AS DOUBLE) as _weight
     FROM $table
     GROUP BY $group_cols
     """
