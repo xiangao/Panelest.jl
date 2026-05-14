@@ -103,6 +103,28 @@ You can change the time window without editing the file:
 LAUS_START_YEAR=1990 LAUS_END_YEAR=2025 julia --project=docs examples/laus_duckdb_demo.jl
 ```
 
+## R Baseline Without DuckDB
+
+The repository also includes an R baseline that does not use DuckDB:
+
+```bash
+Rscript examples/laus_r_fixest_demo.R
+```
+
+It uses `data.table::fread()` to read the same raw LAUS flat files, reshapes the
+long BLS measure rows into the same county-month panel, and estimates the same
+fixed-effect regressions with `fixest::feols()`:
+
+```r
+feols(unemp_rate ~ log_labor_force | county_id + year_month, data = laus_panel)
+feols(log_unemployment ~ log_labor_force | county_id + year_month, data = laus_panel)
+```
+
+This is a useful comparison because it separates two pieces of the workflow:
+
+- **Panel construction**: DuckDB vs. R/data.table reading and reshaping flat files.
+- **Estimation**: `Panelest.feols` vs. `fixest::feols` on the same regression.
+
 ## Example Output
 
 On the local LAUS snapshot at `~/projects/data/laus`, the default 2015-2025
@@ -156,6 +178,36 @@ startup, package loading, and related overhead outside the timed body of the scr
 The first `feols` call also includes method compilation, which is why the second
 model is much faster in the same process. Timings vary by machine, storage, and
 whether Julia has already precompiled the relevant packages.
+
+The R/data.table/fixest baseline produced the same panel size and same point
+estimates:
+
+```text
+LAUS county-month panel
+     rows counties first_year last_year avg_unemp_rate
+1: 421813     3222       2015      2025           4.73
+
+Coefficients
+               model coefficient   std_error
+1: unemployment rate  -3.1717005 0.029632306
+2:  log unemployment   0.3215226 0.004648597
+
+Timing
+                       step seconds
+1:   data.table panel build   10.00
+2: fixest unemployment rate    0.07
+3:  fixest log unemployment    0.06
+4:         total in-process   10.19
+shell_wall_seconds 11.61
+```
+
+In this local run, DuckDB built the analysis table faster than the R flat-file
+pipeline (`3.99` seconds vs. `10.00` seconds). The R script was faster end to end
+because `fixest` estimated these two regressions much faster and R had less
+startup/package-loading overhead in this run. The point estimates agree; the
+reported standard errors differ because the two demos currently use their
+packages' default IID variance calculations after different internal estimation
+paths.
 
 The documentation shows captured output instead of executing the LAUS script during
 the docs build, because GitHub Actions does not have the local BLS files.
