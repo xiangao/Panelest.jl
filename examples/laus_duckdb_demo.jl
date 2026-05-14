@@ -93,10 +93,11 @@ function build_laus_panel!(con; laus_dir = LAUS_DIR, start_year = START_YEAR, en
 end
 
 function main()
+    total_start = time()
     db = DuckDB.DB()
     con = DBInterface.connect(db)
 
-    build_laus_panel!(con)
+    build_seconds = @elapsed build_laus_panel!(con)
 
     summary = DataFrame(DBInterface.execute(con, """
     SELECT
@@ -111,19 +112,23 @@ function main()
     println(summary)
 
     println("\nModel 1: county unemployment rate on labor-force size, county FE, and year-month FE")
-    model_rate = feols(
-        con,
-        "laus_panel",
-        @formula(unemp_rate ~ log_labor_force + fe(county_id) + fe(year_month)),
-    )
+    model_rate_seconds = @elapsed begin
+        model_rate = feols(
+            con,
+            "laus_panel",
+            @formula(unemp_rate ~ log_labor_force + fe(county_id) + fe(year_month)),
+        )
+    end
     println(model_rate)
 
     println("\nModel 2: log unemployed workers on labor-force size, county FE, and year-month FE")
-    model_count = feols(
-        con,
-        "laus_panel",
-        @formula(log_unemployment ~ log_labor_force + fe(county_id) + fe(year_month)),
-    )
+    model_count_seconds = @elapsed begin
+        model_count = feols(
+            con,
+            "laus_panel",
+            @formula(log_unemployment ~ log_labor_force + fe(county_id) + fe(year_month)),
+        )
+    end
     println(model_count)
 
     println("\nCoefficients")
@@ -131,6 +136,13 @@ function main()
         model = ["unemployment rate", "log unemployment"],
         coefficient = [only(model_rate.beta), only(model_count.beta)],
         std_error = [sqrt(only(model_rate.vcov)), sqrt(only(model_count.vcov))],
+    ))
+
+    total_seconds = time() - total_start
+    println("\nTiming")
+    println(DataFrame(
+        step = ["DuckDB panel build", "feols unemployment rate", "feols log unemployment", "total in-process"],
+        seconds = round.([build_seconds, model_rate_seconds, model_count_seconds, total_seconds]; digits = 2),
     ))
 end
 

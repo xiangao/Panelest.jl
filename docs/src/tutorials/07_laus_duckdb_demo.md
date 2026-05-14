@@ -34,6 +34,43 @@ measures into a panel:
 The resulting table is called `laus_panel`. For the default 2015-2025 window it has
 421,813 county-month rows and 3,222 counties in the current local LAUS snapshot.
 
+## How DuckDB Is Used
+
+The LAUS source files remain plain tab-delimited text files. The demo does not first
+load the raw county file into a Julia `DataFrame`. Instead, DuckDB scans the raw
+files directly:
+
+```julia
+FROM read_csv_auto(".../la.data.64.County", delim='\t', header=true, all_varchar=true)
+```
+
+DuckDB then does the relational work:
+
+1. Reads `la.series` and `la.area` as metadata views.
+2. Reads `la.data.64.County` as a raw county observation view.
+3. Filters to monthly rows, the requested year range, county areas, unadjusted
+   series, and measures `03`-`06`.
+4. Joins the raw observations to the metadata.
+5. Pivots the long BLS measure rows into one county-month row with unemployment
+   rate, unemployment, employment, and labor force columns.
+6. Stores the prepared analysis table as `laus_panel` inside DuckDB.
+
+Only after that does `Panelest.jl` receive data for estimation. The call
+
+```julia
+feols(con, "laus_panel", @formula(unemp_rate ~ log_labor_force + fe(county_id) + fe(year_month)))
+```
+
+passes a DuckDB connection and table name to the extension. The extension asks
+DuckDB for the formula columns, creates `_y_mean` and `_weight` sufficient-statistic
+columns with a SQL `GROUP BY`, materializes the compressed table into Julia, and
+then runs the standard `feols` estimator.
+
+For this particular LAUS model, `log_labor_force` is nearly continuous, so the
+compression step does not shrink the data much. DuckDB's main contribution here is
+fast raw-file scanning, filtering, joining, and reshaping before Julia sees the
+analysis table.
+
 ## Model
 
 The demo estimates two descriptive fixed-effects specifications through the DuckDB
@@ -102,7 +139,23 @@ Coefficients
 -----+-------------------------------------------
    1 | unemployment rate    -3.1717    0.0256071
    2 | log unemployment      0.321523  0.0256071
+
+Timing
+4x2 DataFrame
+ Row | step                     seconds
+     | String                   Float64
+-----+----------------------------------
+   1 | DuckDB panel build          3.99
+   2 | feols unemployment rate     6.0
+   3 | feols log unemployment      0.5
+   4 | total in-process           14.62
 ```
+
+The same run took 21.56 seconds by shell wall clock. The difference is Julia
+startup, package loading, and related overhead outside the timed body of the script.
+The first `feols` call also includes method compilation, which is why the second
+model is much faster in the same process. Timings vary by machine, storage, and
+whether Julia has already precompiled the relevant packages.
 
 The documentation shows captured output instead of executing the LAUS script during
 the docs build, because GitHub Actions does not have the local BLS files.
