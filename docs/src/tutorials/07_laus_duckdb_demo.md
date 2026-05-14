@@ -65,3 +65,44 @@ You can change the time window without editing the file:
 ```bash
 LAUS_START_YEAR=1990 LAUS_END_YEAR=2025 julia --project=docs examples/laus_duckdb_demo.jl
 ```
+
+## Example Output
+
+On the local LAUS snapshot at `~/projects/data/laus`, the default 2015-2025
+run produces:
+
+```text
+LAUS county-month panel
+1x5 DataFrame
+ Row | rows    counties  first_year  last_year  avg_unemp_rate
+     | Int64   Int64     Int32       Int32      Float64
+-----+---------------------------------------------------------
+   1 | 421813      3222        2015       2025            4.73
+
+Model 1: county unemployment rate on labor-force size, county FE, and year-month FE
+Panelest Model: ols
+Number of obs: 421813
+Converged: true
+Iterations: 1
+Estimate for log_labor_force: -3.1717
+Std. Error: 0.0256071
+
+Model 2: log unemployed workers on labor-force size, county FE, and year-month FE
+Panelest Model: ols
+Number of obs: 421813
+Converged: true
+Iterations: 1
+Estimate for log_labor_force: 0.321523
+Std. Error: 0.0256071
+
+Coefficients
+2x3 DataFrame
+ Row | model              coefficient  std_error
+     | String             Float64      Float64
+-----+-------------------------------------------
+   1 | unemployment rate    -3.1717    0.0256071
+   2 | log unemployment      0.321523  0.0256071
+```
+
+The documentation shows captured output instead of executing the LAUS script during
+the docs build, because GitHub Actions does not have the local BLS files.
