@@ -87,3 +87,8 @@ con = DBInterface.connect(DuckDB.DB())
 
 fepois(con, "data", @formula(y ~ x + fe(id) + fe(year)))
 ```
+
+
+## Development note
+
+This package was developed with assistance from Claude Code (Anthropic). All generated code has been reviewed, tested, and is understood by the maintainer.
