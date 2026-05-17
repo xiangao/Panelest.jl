@@ -13,7 +13,7 @@ using Tables
 using Distributions
 
 export fepois, felogit, feprobit, feols, feglm, fe, clogit, cre, feiv
-export emfx, dataset
+export etwfe, ETWFEResult, emfx, dataset
 
 # --- Formula Parsing ---
 
