@@ -22,11 +22,13 @@ df.y_binary = Float64.(rand(n) .< 1 ./ (1 .+ exp.(-0.8 .* df.x1 .- 0.4 .* latent
 nothing
 ```
 
-`Panelest.jl` provides specialized tools for non-linear panel models, including binary outcomes and count data.
+This page shows the non-linear panel models: count outcomes, binary outcomes,
+conditional logit, and correlated random effects.
 
 ## Poisson Models
 
-Poisson regressions with fixed effects are highly optimized using a unified IRLS-FE engine.
+Poisson regressions with fixed effects use the same IRLS-FE machinery as the
+other GLM estimators.
 
 ```@example nonlinear_models
 m = fepois(df, @formula(y_counts ~ x1 + fe(id) + fe(time)))
@@ -60,7 +62,9 @@ println(m_clogit)
 
 ## Correlated Random Effects (CRE)
 
-For other non-linear models (like probit) where conditional logit is not available, the Correlated Random Effects approach (Wooldridge, 2010) is a robust alternative. It augments the covariates with their group-level means to capture the correlation between the fixed effects and the observed variables.
+For other non-linear models, such as probit, conditional logit is not available.
+The correlated-random-effects approach of Wooldridge (2010) is one way to keep
+unit heterogeneity in the model: add group means of the time-varying covariates.
 
 ```@example nonlinear_models
 # CRE Probit

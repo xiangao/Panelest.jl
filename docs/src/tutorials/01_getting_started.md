@@ -4,7 +4,9 @@
 CurrentModule = Panelest
 ```
 
-`Panelest.jl` is a high-performance Julia package for panel data estimation, inspired by the R package `fixest`. It provides efficient tools for linear and non-linear models with high-dimensional fixed effects and flexible clustering.
+`Panelest.jl` estimates linear and non-linear panel models with high-dimensional
+fixed effects. The syntax is meant to feel close to `fixest`, but the examples
+below stay within Julia.
 
 ## Basic Usage
 
@@ -64,4 +66,5 @@ Beyond OLS and Poisson, `Panelest.jl` supports:
 
 ## Performance
 
-`Panelest.jl` matches the performance of R's `fixest` by absorbing fixed effects directly within each iteration of the IRLS loop for GLMs. For OLS, it leverages the high-performance solvers in `FixedEffects.jl`.
+For GLMs, fixed effects are absorbed inside the IRLS loop. For OLS, the package
+uses the solvers in `FixedEffects.jl`.

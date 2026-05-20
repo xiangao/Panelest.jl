@@ -95,8 +95,8 @@ y ~ x1 + x2 | indiv_id + firm_id_difficult + year    (difficult)
 
 | Aspect     | fixest                          | Panelest.jl                |
 |------------|---------------------------------|----------------------------|
-| Maturity   | Highly mature, production-ready | Newer, active development  |
-| Features   | Rich (stepwise, DiD, export)    | Core estimators            |
+| Maturity   | Mature R package                | Newer Julia package        |
+| Scope      | Broad modeling and export tools | Core panel estimators      |
 | Ecosystem  | R (visualization, tables)       | Julia (composability, speed)|
 
 ## Methodology

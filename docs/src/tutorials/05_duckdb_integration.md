@@ -34,13 +34,15 @@ panel_df = DataFrame(DBInterface.execute(con, "SELECT * FROM panel_data"))
 model = fepois(panel_df, @formula(y ~ x + fe(id) + fe(year)))
 ```
 
-`Panelest.jl` features first-class integration with **DuckDB**. This allows you to estimate high-dimensional fixed effects models on datasets that are much larger than your available RAM by leveraging DuckDB's analytical engine for data compression.
+DuckDB is useful here as a storage and preprocessing layer. You can keep a large
+panel table in DuckDB, run filtering or aggregation there, and then pass the
+prepared table to `Panelest.jl`.
 
 ## Why use DuckDB with Panelest?
 
-1.  **Out-of-Memory Scaling**: Estimate models on 100M+ rows without loading them into Julia's memory.
-2.  **Automatic Compression**: `Panelest` automatically generates SQL `GROUP BY` queries to collapse data into sufficient statistics (means and counts) before estimation.
-3.  **Speed**: DuckDB is highly optimized for the aggregations required for GLM and OLS demeaning.
+1.  **Storage**: Keep the raw table outside Julia memory.
+2.  **Compression**: Collapse repeated cells into means and counts before estimation.
+3.  **Speed**: Let DuckDB do the aggregation work it is good at.
 
 ## Basic Usage
 

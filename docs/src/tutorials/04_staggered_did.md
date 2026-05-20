@@ -4,7 +4,9 @@
 CurrentModule = Panelest
 ```
 
-This vignette demonstrates staggered Difference-in-Differences (DiD) estimation using `Panelest.jl`. We use a simulated dataset similar to `base_stagg` in `fixest`, which is designed to illustrate treatment effects that vary by cohort and time-since-treatment.
+This vignette shows staggered difference-in-differences estimation with
+`Panelest.jl`. The simulated data are similar to `base_stagg` in `fixest` and
+have effects that vary by cohort and time since treatment.
 
 ## Data Simulation (base_stagg like)
 

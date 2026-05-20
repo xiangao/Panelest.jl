@@ -1,7 +1,7 @@
 # LAUS DuckDB Demo
 
 This repository includes a local demo using the Bureau of Labor Statistics Local Area
-Unemployment Statistics files. It is designed to show `Panelest.jl` on a real
+Unemployment Statistics files. It shows `Panelest.jl` on a real
 county-month panel while DuckDB handles the raw tab-delimited files.
 
 The demo expects the LAUS directory at `~/projects/data/laus`. You can override that

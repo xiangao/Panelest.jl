@@ -1,13 +1,15 @@
 # Panelest.jl
 
-`Panelest.jl` is a high-performance Julia package for panel data estimation. It is designed to match the speed and user-friendliness of R's `fixest` while leveraging Julia's native performance for non-linear models.
+`Panelest.jl` estimates panel models with high-dimensional fixed effects. I use
+it as a Julia version of the workflows I usually run with `fixest`: OLS,
+Poisson, logit/probit, IV, clustering, and formulas with absorbed fixed effects.
 
-## Features
+## What is included
 
-- **High-Performance IRLS-FE**: Efficiently absorbs fixed effects within the iteratively reweighted least squares loop for Poisson, Logit, and Probit models.
-- **Multiple Fixed Effects**: Support for high-dimensional individual and time fixed effects using `FixedEffects.jl`.
-- **Flexible Clustering**: Robust and multi-way clustered standard errors via `Vcov.jl`.
-- **Non-Linear Panel Methods**: Includes Chamberlain's Conditional Logit (recursive algorithm) and Wooldridge's Correlated Random Effects (CRE).
+- IRLS with fixed effects for Poisson, logit, and probit models.
+- Multiple fixed effects through `FixedEffects.jl`.
+- One-way and multi-way clustered standard errors through `Vcov.jl`.
+- Chamberlain conditional logit and Wooldridge correlated random effects.
 
 ## Installation
 
