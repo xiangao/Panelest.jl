@@ -1,6 +1,9 @@
 # Panelest.jl
 
-A high-performance Julia package for estimating panel data models with high-dimensional fixed effects. Fast and memory-efficient, with support for out-of-core processing via DuckDB.
+`Panelest.jl` estimates panel models with high-dimensional fixed effects. I
+mainly use it as a Julia analogue of the common `fixest` workflow: OLS,
+Poisson, logit/probit, IV, clustering, and formulas with absorbed fixed effects.
+For large tables it can also read from DuckDB.
 
 ## Models
 
@@ -16,7 +19,8 @@ A high-performance Julia package for estimating panel data models with high-dime
 
 ## Performance
 
-Panelest.jl matches or beats [fixest](https://lrberge.github.io/fixest/) (R/C++) on OLS:
+On the benchmark below, `Panelest.jl` is in the same range as
+[fixest](https://lrberge.github.io/fixest/) for OLS:
 
 | Sample Size | Fixed Effects    | fixest (R) | Panelest.jl | Ratio        |
 |-------------|------------------|------------|-------------|--------------|
@@ -25,7 +29,8 @@ Panelest.jl matches or beats [fixest](https://lrberge.github.io/fixest/) (R/C++)
 | 1M          | 3 FE (simple)    | 0.527s     | 0.45s       | **0.85x** ✅ |
 | 1M          | 2 FE (difficult) | 6.17s      | 4.97s       | **0.81x** ✅ |
 
-OLS uses a direct demeaning + Cholesky solve (no IRLS iteration) with an Irons-Tuck accelerated demeaning engine mirroring fixest's C++ implementation. Poisson is stable up to 1M+ observations.
+OLS uses demeaning followed by a Cholesky solve, with an Irons-Tuck accelerated
+demeaning step similar to the one used by `fixest`.
 
 ## Installation
 
