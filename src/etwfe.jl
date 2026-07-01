@@ -40,10 +40,19 @@ end
 
 Fit Wooldridge's Extended Two-Way Fixed Effects (ETWFE) estimator.
 
-Uses **cohort FE + year FE** (not unit FE) — the correct specification that
-avoids contamination bias from mixing pre- and post-treatment variation in the
-within-unit demeaning. Post-treatment cohort×year dummies are created
-automatically for each (cohort g, year t ≥ g).
+Uses **cohort FE + year FE** (not unit FE) — this avoids the contamination
+bias that a single-coefficient TWFE regression suffers from when treatment
+timing is staggered and effects are heterogeneous across cohorts. Post-treatment
+cohort×year dummies are created automatically for each (cohort g, year t ≥ g).
+
+Every treated cohort must have at least one pre-treatment period in `data`
+(i.e. `gvar > minimum(tvar)`). A cohort treated at or before the first sample
+period cannot be identified — it has no pre-period to distinguish its cohort
+fixed effect from its treatment dummies, and it cannot serve as a control
+either, since it is already treated throughout. Such cohorts are dropped
+automatically with a warning (matching Callaway & Sant'Anna (2021)'s
+treatment of always-treated units); include earlier periods in your data if
+you need to identify them.
 
 # Arguments
 - `data`   : DataFrame
@@ -71,11 +80,30 @@ function etwfe(data::DataFrame, fml::FormulaTerm;
                vcov                 = Vcov.simple(),
                kwargs...)
 
-    cohorts = sort(unique(filter(g -> g > 0, data[!, gvar])))
-    isempty(cohorts) && error("etwfe: no treated units found (gvar > 0)")
+    cohorts_all = sort(unique(filter(g -> g > 0, data[!, gvar])))
+    isempty(cohorts_all) && error("etwfe: no treated units found (gvar > 0)")
     tmin, tmax = extrema(data[!, tvar])
 
-    df = copy(data)
+    # A cohort treated at or before the first sample period has no pre-treatment
+    # observation: every row it contributes already carries a post-treatment
+    # dummy, so its cohort fixed effect is not separately identified from those
+    # dummies (and, more importantly, it cannot serve as an untreated control
+    # either — it is already treated in every observed period). Drop it, the
+    # same way Callaway & Sant'Anna (2021) drop always-treated units.
+    dropped = filter(g -> g <= tmin, cohorts_all)
+    if !isempty(dropped)
+        @warn "etwfe: dropping cohort(s) $(dropped) — treated at or before " *
+              "the first sample period ($tmin), so no pre-treatment period is " *
+              "observed. Their effect is not identified and they cannot serve " *
+              "as a control (already treated throughout). Include earlier " *
+              "periods in the data if you need to identify these cohorts."
+    end
+    cohorts = filter(g -> g > tmin, cohorts_all)
+    isempty(cohorts) && error(
+        "etwfe: no identified cohorts remain — every treated cohort is " *
+        "treated at or before the first sample period ($tmin).")
+
+    df = isempty(dropped) ? copy(data) : filter(row -> !(row[gvar] in dropped), data)
 
     # Cohort and year FE as string columns (unique internal names)
     gfe_col = :_etwfe_g_str
@@ -279,14 +307,18 @@ end
     dataset("mpdta")
 
 Return a synthetic balanced panel mimicking Callaway & Sant'Anna's `mpdta`:
-500 counties × 4 years (2004–2007), three treated cohorts (2004, 2006, 2007)
+500 counties × 5 years (2003–2007), three treated cohorts (2004, 2006, 2007)
 and a never-treated group. Includes `first_treat_str` and `year_str` string
 columns required for the legacy ETWFE formula interface.
+
+The sample starts one year (2003) before the earliest treated cohort (2004),
+matching the real `mpdta`, so every cohort has a genuine pre-treatment period
+and its effect is identified by `etwfe()`.
 """
 function dataset(name::String)
     name == "mpdta" || error("Unknown dataset: '$name'")
 
-    years        = [2004, 2005, 2006, 2007]
+    years        = [2003, 2004, 2005, 2006, 2007]
     n_per_cohort = 125
     cohorts      = vcat(fill(2004, n_per_cohort), fill(2006, n_per_cohort),
                         fill(2007, n_per_cohort), fill(0,    n_per_cohort))
@@ -298,7 +330,7 @@ function dataset(name::String)
     treat       = [g > 0 && t >= g ? 1 : 0 for (g, t) in zip(first_treat, year_vec)]
 
     unit_fe = repeat([sin(i * 0.37) for i in 1:n], inner = length(years))
-    time_fe = repeat([0.0, 0.08, 0.16, 0.24],      outer = n)
+    time_fe = repeat([0.0, 0.08, 0.16, 0.24, 0.32], outer = n)
     eps     = [cos(i * 1.37) * 0.4               for i in 1:(n * length(years))]
     lemp    = unit_fe .+ time_fe .+ 0.30 .* treat .+ eps
     lpop    = repeat([10.0 + sin(i * 0.53) for i in 1:n], inner = length(years))

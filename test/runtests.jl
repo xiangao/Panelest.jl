@@ -162,4 +162,49 @@ using StatsFuns
             @test occursin("Wu-Hausman", output)
         end
     end
+
+    @testset "ETWFE" begin
+        df = Panelest.dataset("mpdta")
+
+        @testset "recovers true ATT (0.30) for every cohort" begin
+            m = Panelest.etwfe(df, @formula(lemp ~ lpop); gvar=:first_treat, tvar=:year)
+            @test m.cohorts == [2004, 2006, 2007]
+
+            ov = Panelest.emfx(m, type="simple")
+            @test isapprox(ov.estimate[1], 0.30, atol=0.05)
+
+            es = Panelest.emfx(m, type="event")
+            @test all(isapprox.(es.estimate, 0.30, atol=0.05))
+
+            # Every post-treatment cell, cohort by cohort — this is the
+            # regression test for the "cohort with no pre-period" bug: before
+            # the fix, cohort 2004's cells (the earliest treated cohort) were
+            # silently ≈0 instead of ≈0.30 because they weren't separable from
+            # the cohort fixed effect.
+            for (cn, b) in zip(m.model.coefnames, m.model.beta)
+                if startswith(cn, "_D_")
+                    @test isapprox(b, 0.30, atol=0.05)
+                end
+            end
+        end
+
+        @testset "drops cohorts with no pre-treatment period, with a warning" begin
+            df_bad = copy(df)
+            df_bad.gvar_bad = ifelse.(df_bad.first_treat .== 2004, minimum(df_bad.year), df_bad.first_treat)
+
+            @test_logs (:warn, r"dropping cohort") begin
+                m_bad = Panelest.etwfe(df_bad, @formula(lemp ~ lpop); gvar=:gvar_bad, tvar=:year)
+                @test m_bad.cohorts == [2006, 2007]
+            end
+        end
+
+        @testset "errors when no cohort is identified" begin
+            df_none = copy(df)
+            df_none.gvar_none = ifelse.(df_none.first_treat .> 0, minimum(df_none.year), 0)
+            @test_logs (:warn, r"dropping cohort") match_mode=:any begin
+                @test_throws ErrorException Panelest.etwfe(
+                    df_none, @formula(lemp ~ lpop); gvar=:gvar_none, tvar=:year)
+            end
+        end
+    end
 end
