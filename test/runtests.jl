@@ -8,6 +8,7 @@ using Vcov
 using StatsAPI
 using StatsBase
 using StatsFuns
+using LinearAlgebra
 
 @testset "Panelest.jl" begin
     Random.seed!(42)
@@ -38,6 +39,32 @@ using StatsFuns
         @test isapprox(coef(m_ols)[2], -0.3, atol=0.1)
     end
     
+    @testset "OLS standard errors match fixest" begin
+        # Deterministic panel; reference values from R fixest 0.13 with its default
+        # small-sample correction (vcov = "iid", "hetero", ~id).
+        i = 1:600
+        d = DataFrame(id = (i .- 1) .÷ 10 .+ 1, t = (i .- 1) .% 10 .+ 1)
+        d.x = sin.(i) .+ 0.1 .* d.t .+ 0.05 .* d.id
+        d.z = cos.(2 .* i)
+        d.y = 1 .+ 0.5 .* d.x .- 0.3 .* d.z .+ 0.2 .* cos.(d.id) .+ 0.1 .* d.t .+ sin.(7 .* i .^ 1.3)
+        se(m) = sqrt.(diag(vcov(m)))
+        f0 = @formula(y ~ x + z); f1 = @formula(y ~ x + z + fe(id) + fe(t)); f2 = @formula(y ~ x + z + fe(t))
+        @test se(feols(d, f0)) ≈ [0.0648465059883202, 0.0272808592149845, 0.0445204827155806] rtol = 1e-8
+        @test se(feols(d, f0, vcov = Vcov.robust())) ≈ [0.063122904181411, 0.0269466848894157, 0.0443850229676334] rtol = 1e-8
+        @test se(feols(d, f0, vcov = Vcov.cluster(:id))) ≈ [0.0584412250371597, 0.0242802215229555, 0.0507323242037212] rtol = 1e-8
+        @test se(feols(d, f1)) ≈ [0.0428893743660274, 0.0421055748243555] rtol = 1e-6
+        @test se(feols(d, f1, vcov = Vcov.robust())) ≈ [0.0430194547165523, 0.0420922889519952] rtol = 1e-6
+        @test se(feols(d, f1, vcov = Vcov.cluster(:id))) ≈ [0.045909640572588, 0.0501285382727725] rtol = 1e-6
+        @test se(feols(d, f2, vcov = Vcov.cluster(:id))) ≈ [0.0264932852063592, 0.0499884877639684] rtol = 1e-6
+        @test dof_residual(feols(d, f1)) == 529
+        # One-FE demeaning is threaded over columns; it once shared a mutable
+        # weight cache across threads and returned different answers on each call.
+        f3 = @formula(y ~ x + z + fe(id))
+        @test coef(feols(d, f2)) ≈ [0.481738313293530, -0.262441893679162] rtol = 1e-8
+        @test coef(feols(d, f3)) ≈ [0.600307068087174, -0.261239301395650] rtol = 1e-8
+        @test all(_ -> coef(feols(d, f2)) == coef(feols(d, f2)), 1:30)
+    end
+
     @testset "Nonlinear Models" begin
         m_pois = fepois(df, @formula(y_pois ~ x1 + x2 + fe(id)))
         @test m_pois.converged

@@ -50,7 +50,7 @@ function felogit(df::DataFrame, formula::FormulaTerm; vcov = Vcov.simple(), weig
             total_w_full = w_vec .* mu_full .* (1.0 .- mu_full)
             solve_residuals_fixest!(collect(eachcol(X_resid_full)), fes, total_w_full; tol=1e-8)
             
-            V = vcov_panelest(df, (beta=res.beta, mu=mu_full, residuals=y .- mu_full, XtWX=res.XtWX, X_resid=X_resid_full), vcov; weights = w_vec)
+            V = vcov_panelest(df, (beta=res.beta, mu=mu_full, residuals=y .- mu_full, XtWX=res.XtWX, X_resid=X_resid_full), vcov; weights = w_vec, fes = fes)
             
             return PanelestModel(
                 res.beta, V, y .- mu_full, mu_full, eta_full,
@@ -65,7 +65,7 @@ function felogit(df::DataFrame, formula::FormulaTerm; vcov = Vcov.simple(), weig
     res = felogit_fit(y, X, fes; weights = w_vec, kwargs...)
     
     # 6. VCov
-    V = vcov_panelest(df, res, vcov; weights = w_vec)
+    V = vcov_panelest(df, res, vcov; weights = w_vec, fes = fes)
     
     return PanelestModel(
         res.beta, V, res.residuals, res.mu, res.eta,
