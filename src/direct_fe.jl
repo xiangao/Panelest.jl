@@ -24,25 +24,15 @@ function DemeanSolver(fes_refs::Vector{<:AbstractVector{<:Integer}}, n_obs::Int)
     return DemeanSolver(refs32, n_obs)
 end
 
-function get_level_weights!(solver::DemeanSolver, weights::AbstractVector{Float64}, q_idx::Int)
-    n_levels = solver.fe_levels[q_idx]
-    
-    if solver.cached_weights === weights && !isempty(solver.cached_level_weights[q_idx])
-        return solver.cached_level_weights[q_idx]
-    end
-    
-    if length(solver.cached_level_weights[q_idx]) != n_levels
-        solver.cached_level_weights[q_idx] = zeros(Float64, n_levels)
-    else
-        fill!(solver.cached_level_weights[q_idx], 0.0)
-    end
-    
-    lw = solver.cached_level_weights[q_idx]
+# Sum of weights within each level of fixed effect q. Returns a fresh vector:
+# solve_residuals_fixest! shares one solver across threads, so this must not
+# write into the solver (an earlier in-place cache raced and corrupted results).
+function get_level_weights(solver::DemeanSolver, weights::AbstractVector{Float64}, q_idx::Int)
+    lw = zeros(Float64, solver.fe_levels[q_idx])
     refs = solver.fes_refs[q_idx]
     @inbounds for i in 1:solver.n_obs
         lw[refs[i]] += weights[i]
     end
-    
     return lw
 end
 
@@ -52,7 +42,8 @@ function demean_fixest!(
     solver::DemeanSolver;
     tol::Float64 = 1e-8,
     maxiter::Int = 1000,
-    accelerate::Bool = true
+    accelerate::Bool = true,
+    all_level_weights = nothing
 )
     n = solver.n_obs
     n_vars = size(X, 2)
@@ -65,7 +56,9 @@ function demean_fixest!(
     v_prev = zeros(Float64, n)
     v_prevprev = zeros(Float64, n)
     
-    all_level_weights = [get_level_weights!(solver, weights, q) for q in 1:length(solver.fes_refs)]
+    if all_level_weights === nothing
+        all_level_weights = [get_level_weights(solver, weights, q) for q in 1:length(solver.fes_refs)]
+    end
     
     for j in 1:n_vars
         v = v_view(X, j)
@@ -290,7 +283,9 @@ function solve_residuals_fixest!(cols, fes, weights; tol = 1e-8, maxiter = 1000,
         solver = DemeanSolver(fes_refs, n)
     end
     
+    # computed once, before the threaded loop, and only read inside it
+    lws = [get_level_weights(solver, weights, q) for q in 1:length(solver.fes_refs)]
     Threads.@threads for col in cols
-        demean_fixest!(col, weights, solver; tol = tol, maxiter = maxiter)
+        demean_fixest!(col, weights, solver; tol = tol, maxiter = maxiter, all_level_weights = lws)
     end
 end

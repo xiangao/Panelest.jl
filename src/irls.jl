@@ -249,21 +249,47 @@ StatsAPI.residuals(m::PanelestDummyModel) = m.residuals
 StatsAPI.dof_residual(m::PanelestDummyModel) = m.df_residual
 Vcov.invcrossmodelmatrix(m::PanelestDummyModel) = pinv(m.XtWX)
 
-function vcov_panelest(df, res, vcov_method; weights = ones(size(res.X_resid, 1)))
-    if vcov_method isa Vcov.SimpleCovariance
-        return pinv(res.XtWX)
+# Number of parameters absorbed by the fixed effects, following fixest's default
+# small-sample correction, ssc(fixef.K = "nested"): one for the absorbed intercept,
+# plus levels - 1 for each fixed effect. A fixed effect nested in a cluster variable
+# counts for nothing. This also matches Stata's xtreg, fe vce(cluster).
+function fe_dof(fes, clusters = nothing)
+    isempty(fes) && return 0
+    k = 1
+    for fe in fes
+        nested = clusters !== nothing && any(c -> isnested(fe.refs, c.groups), clusters)
+        k += nested ? 0 : fe.n - 1
     end
-    
-    # Materialize vcov to get clusters if any
-    v = Vcov.materialize(df, vcov_method)
-    
-    # Use Vcov.vcov by providing a dummy model that implements required methods
-    # X_resid is used as the model matrix because FE were already absorbed
+    return k
+end
+
+# true if every level of `inner` falls inside a single level of `outer`
+function isnested(inner, outer)
+    seen = Dict{eltype(inner), eltype(outer)}()
+    for (a, b) in zip(inner, outer)
+        get!(seen, a, b) == b || return false
+    end
+    return true
+end
+
+# `fes` are the absorbed fixed effects. `scale_simple = true` (OLS, IV) multiplies the
+# simple covariance by the residual variance; for likelihood models (Poisson, logit,
+# probit) the simple covariance is the inverse information and is left as is.
+function vcov_panelest(df, res, vcov_method; weights = ones(size(res.X_resid, 1)),
+                       fes = FixedEffect[], scale_simple = false)
     n_weighted = sum(weights)
     p = size(res.X_resid, 2)
-    # df_residual is N_weighted - K - p
-    # For now we use n_weighted - p as a safe approximation for clustering
-    dummy = PanelestDummyModel(res.X_resid, res.residuals, res.XtWX, Int(round(n_weighted - p)))
-    
+    if vcov_method isa Vcov.SimpleCovariance
+        V = pinv(res.XtWX)
+        scale_simple || return V
+        sigma2 = sum(weights .* abs2.(res.residuals)) / (n_weighted - p - fe_dof(fes))
+        return V .* sigma2
+    end
+
+    v = Vcov.materialize(df, vcov_method)
+    clusters = v isa Vcov.ClusterCovariance ? values(v.clusters) : nothing
+    # Vcov scales by (N - 1) / dof_residual (clustered) or N / dof_residual (robust)
+    dof = Int(round(n_weighted - p - fe_dof(fes, clusters)))
+    dummy = PanelestDummyModel(res.X_resid, res.residuals, res.XtWX, dof)
     return StatsAPI.vcov(dummy, v)
 end

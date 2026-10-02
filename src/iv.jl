@@ -193,11 +193,11 @@ function feiv(df::DataFrame, formula::FormulaTerm;
 
     # --- Step 6: Variance-covariance ---
     p_total = size(UX, 2)
-    df_resid = n - p_total - n_fe
+    df_resid = n - p_total - fe_dof(fes)
 
     # Build a result-like NamedTuple for vcov_panelest
     iv_res = (X_resid = UX, residuals = resid_corrected, XtWX = XtWX_2sls)
-    V = vcov_panelest(df, iv_res, vcov_type; weights = w_vec)
+    V = vcov_panelest(df, iv_res, vcov_type; weights = w_vec, fes = fes, scale_simple = true)
 
     # --- Step 7: Diagnostics ---
 

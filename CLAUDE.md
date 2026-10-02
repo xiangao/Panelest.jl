@@ -81,3 +81,27 @@ No `Manifest.toml` is committed (correct for a Julia library — a
 committed Manifest resolved on one machine's Julia can silently break
 CI on other Julia versions in the test matrix, as happened to several
 sibling packages in this portfolio in 2026-07).
+
+## Standard-error fixes (2026-10-01, branch `fix-vcov-dof`)
+
+Three bugs, found while porting the DiD-with-continuous-treatment book chapter:
+
+1. **Race in one-FE (and 3+ FE) demeaning.** `solve_residuals_fixest!` threads over columns
+   with one shared `DemeanSolver`; `get_level_weights!` zero-filled and re-accumulated the
+   solver's `cached_level_weights` from every thread at once (its `cached_weights === weights`
+   check could never pass). With 6 threads, repeated identical `feols(y ~ x + fe(t))` calls
+   returned x coefficients from -6.2 to 8.3 (truth 0.48). Two-FE models use `TwoFEGauSolver`
+   and were never affected. Fix: level weights are computed once before the threaded loop and
+   passed read-only (`get_level_weights`, no `!`). The unused cache fields remain in the struct.
+2. **Simple vcov had no sigma^2.** `vcov_panelest` returned `pinv(X'X)` for `Vcov.simple()`,
+   the default of `feols`/`feiv`/`etwfe`. Now scaled by RSS/(n - K) for OLS and IV
+   (`scale_simple = true`); Poisson/logit/probit keep the inverse information.
+3. **Small-sample K ignored the fixed effects.** Robust and clustered vcov used dof = n - p.
+   Now K = p + `fe_dof(fes, clusters)`, fixest's `ssc(fixef.K = "nested")` rule:
+   1 + sum over FE not nested in a cluster of (levels - 1). This equals Stata
+   `xtreg, fe vce(cluster)`. `feols`'s `df_residual` uses the same count (it subtracted
+   `length(fes)` before).
+
+Tests: "OLS standard errors match fixest" pins iid, HC1 and clustered SEs (no FE, one FE,
+two FE) and one-FE coefficients against R fixest values on a deterministic panel, plus a
+30-call determinism check. Run with `JULIA_NUM_THREADS=6` (the race needs threads).

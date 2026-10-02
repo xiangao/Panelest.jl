@@ -50,7 +50,7 @@ function feols(df::DataFrame, formula::FormulaTerm; vcov = Vcov.simple(), weight
         X_resid_final = X_demeaned
         converged = true
         iterations = 1
-        df_residual = n - p - length(fes)
+        df_residual = n - p - fe_dof(fes)
     else
         # Simple OLS
         XtX = X' * X
@@ -66,7 +66,8 @@ function feols(df::DataFrame, formula::FormulaTerm; vcov = Vcov.simple(), weight
         df_residual = n - p
     end
 
-    V = vcov_panelest(df, (beta=beta, residuals=residuals, XtWX=XtWX, X_resid=X_resid_final), vcov; weights=w_vec)
+    V = vcov_panelest(df, (beta=beta, residuals=residuals, XtWX=XtWX, X_resid=X_resid_final), vcov;
+                     weights=w_vec, fes=fes, scale_simple=true)
 
     return PanelestModel(
         beta,
