@@ -59,7 +59,7 @@ function Base.show(io::IO, m::IVModel)
 
     # Coefficient table
     ct = coeftable(m)
-    show(io, ct)
+    show(io, MIME"text/plain"(), ct)
     println(io)
 
     # Diagnostics

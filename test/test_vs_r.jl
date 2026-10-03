@@ -69,3 +69,12 @@ end
     @test isapprox(m.diagnostics.wu_hausman.stat, r("wh"); rtol = 1e-6)
     @test m.diagnostics.wu_hausman.df2 == 580
 end
+
+@testset "show prints a formatted coefficient table" begin
+    d = DataFrame(y = randn(200), x = randn(200), z = randn(200), w = randn(200))
+    for m in (feols(d, @formula(y ~ x)), feiv(d, @formula(y ~ x); endo = :w, inst = :z))
+        s = sprint(show, m)
+        @test !occursin("CoefTable(", s)
+        @test occursin("Std. Error", s)
+    end
+end
