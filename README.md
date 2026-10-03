@@ -16,6 +16,7 @@ For large tables it can also read from DuckDB.
 | `feprobit` | Probit                       |
 | `clogit`   | Conditional Logit            |
 | `cre`      | Correlated Random Effects    |
+| `etwfe`    | Wooldridge extended TWFE for staggered DiD; `emfx` aggregates effects. Matches R `etwfe` 0.6, controls and Poisson included |
 
 ## Performance
 
