@@ -17,10 +17,11 @@ from DuckDB for out-of-core estimation.
 - `src/direct_fe.jl`, `src/fe_convergence.jl`, `src/irls.jl` — the shared
   fixed-effects demeaning (Irons-Tuck accelerated) and IRLS machinery
   used by all of the above.
-- `src/etwfe.jl` — Wooldridge (2021) Extended TWFE for staggered DiD:
-  `etwfe()` fits cohort-FE + year-FE with automatic post-treatment
-  cohort×year dummies, `emfx()` aggregates to overall/event/calendar
-  ATTs, `dataset("mpdta")` is a bundled synthetic demo panel.
+- `src/etwfe.jl` — Wooldridge (2021, 2023) Extended TWFE for staggered DiD,
+  same specification as R `etwfe` 0.6: cohort + year effects, one dummy per
+  treatment cell, controls with Wooldridge's interactions; `emfx()` averages
+  per-observation effects into simple/group/event/calendar ATTs (count scale
+  for Poisson). `dataset("mpdta")` is a bundled synthetic demo panel.
 - `test/runtests.jl` — one big `@testset` per model family plus an
   `"ETWFE"` block.
 
@@ -61,12 +62,33 @@ Beware: a separate now-archived package (`xiangao/DiD.jl` /
 `emfx`/`dataset`. It's deprecated in favor of this package — don't
 resurrect logic from it without re-verifying against the bug above.
 
+## `etwfe()` matches R `etwfe` (2026-10-03, branch `etwfe-covariates`)
+
+Before this, `etwfe()` entered controls linearly only, `emfx()` weighted cells
+equally, and Poisson effects were log-scale only. On Wooldridge's simulated
+panel the ATT was 3.448 against R's 3.672 (truth 3.677). Now:
+
+- Controls: x, x × cohort dummies, x × year dummies (ref = gref, tref), and
+  each treatment cell × (x demeaned within cohort, over the full data).
+- `cgroup = "notyet"` (default) or `"never"` (cells for every t ≠ g - 1, so
+  pre-trends are free). `gref`/`tref` defaults follow R.
+- Gaussian fits `feols` with cohort and year FE. Poisson fits `fepois` with an
+  intercept and explicit cohort/year dummies (R's `fe = "none"`), because the
+  count-scale delta method needs the full design row.
+- `emfx()` follows R's row selection and averages exp(η) - exp(η - δ) (Poisson,
+  `scale = "response"`, default) or δ (gaussian, or `scale = "link"`), weighted
+  by observation. Pre-period event times with no free cell report SE = NaN (R: NA).
+- `test/test_etwfe_r.jl` checks 19 aggregate tables against R
+  (`test/data/make_etwfe_ref.R` writes fixtures + reference values): estimates
+  agree to 1e-12 (Poisson with a control 1e-8), SEs to 1e-6 relative (5e-5 in that
+  Poisson case, R's numerical Jacobian).
+
 ## Running tests
 
 ```julia
 cd Panelest.jl && julia --project=. test/runtests.jl
 ```
-No known-slow tests; full suite runs in well under a minute.
+No known-slow tests; full suite runs in about 1.5 minutes with 6 threads.
 
 ## Docs
 

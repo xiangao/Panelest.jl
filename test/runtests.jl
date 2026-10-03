@@ -209,7 +209,7 @@ using LinearAlgebra
             # silently ≈0 instead of ≈0.30 because they weren't separable from
             # the cohort fixed effect.
             for (cn, b) in zip(m.model.coefnames, m.model.beta)
-                if startswith(cn, "_D_")
+                if occursin(r"^_D_g\d+_t\d+$", cn)
                     @test isapprox(b, 0.30, atol=0.05)
                 end
             end
@@ -234,4 +234,6 @@ using LinearAlgebra
             end
         end
     end
+
+    include("test_etwfe_r.jl")
 end
