@@ -83,6 +83,18 @@ panel the ATT was 3.448 against R's 3.672 (truth 3.677). Now:
   agree to 1e-12 (Poisson with a control 1e-8), SEs to 1e-6 relative (5e-5 in that
   Poisson case, R's numerical Jacobian).
 
+## `feiv` diagnostics fixed (2026-10-03, branch `feiv-diagnostics`)
+
+Wu-Hausman used the 2SLS structural-residual SSR as the restricted SSR, so it was
+hugely inflated (520 vs fixest's 6.75 on the Fetter mortgages FRDD). Now the
+regression form: OLS of y on endogenous + exogenous, with and without the
+first-stage residuals. First-stage F and Wu-Hausman denominators now subtract
+`fe_dof(fes)` (absorbed parameters), not the number of FE dimensions. Checked
+against fixest `fitstat(~ ivf + wh)` in `test/test_vs_r.jl`. Note: fixest's
+first-stage F is too small when an instrument is an R logical interacted with a
+variable (`x:above` expands into two columns, one redundant, so the numerator
+df is inflated); Panelest's value matches fixest once the instrument is numeric.
+
 ## Running tests
 
 ```julia

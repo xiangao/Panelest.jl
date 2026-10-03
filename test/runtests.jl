@@ -235,5 +235,5 @@ using LinearAlgebra
         end
     end
 
-    include("test_etwfe_r.jl")
+    include("test_vs_r.jl")
 end

@@ -1,5 +1,5 @@
-# ETWFE against R etwfe 0.6.2 / marginaleffects. Fixtures and reference values
-# are written by test/data/make_etwfe_ref.R.
+# ETWFE and feiv against R (etwfe 0.6.2, marginaleffects, fixest). Fixtures and
+# reference values are written by test/data/make_etwfe_ref.R and make_feiv_ref.R.
 using DelimitedFiles
 
 function _read_csv(path)
@@ -54,4 +54,18 @@ end
             @test isapprox(e.std_error[ok], rse[ok]; rtol = 1e-4)
         end
     end
+end
+
+@testset "feiv matches fixest (estimates, hetero SEs, first-stage F, Wu-Hausman)" begin
+    dir = joinpath(@__DIR__, "data")
+    d   = _read_csv(joinpath(dir, "feiv_sim.csv"))
+    ref = _read_csv(joinpath(dir, "feiv_ref.csv"))
+    r(s) = ref.value[findfirst(==(s), ref.stat)]
+    m = feiv(d, @formula(y ~ x + fe(g) + fe(h)); endo = [:w1, :w2], inst = [:z1, :z2],
+             vcov_type = Vcov.robust())
+    @test isapprox(coef(m)[1:2], [r("beta_w1"), r("beta_w2")]; rtol = 1e-8)
+    @test isapprox(stderror(m)[1:2], [r("se_w1"), r("se_w2")]; rtol = 1e-6)
+    @test isapprox(m.diagnostics.first_stage_F, [r("ivf1"), r("ivf2")]; rtol = 1e-6)
+    @test isapprox(m.diagnostics.wu_hausman.stat, r("wh"); rtol = 1e-6)
+    @test m.diagnostics.wu_hausman.df2 == 580
 end
