@@ -165,7 +165,7 @@ function feiv(df::DataFrame, formula::FormulaTerm;
 
         # F-statistic
         df_num = n_inst
-        df_denom = n - p_zx - n_fe
+        df_denom = n - p_zx - fe_dof(fes)
         F_k = ((ssr_r - ssr_u) / df_num) / (ssr_u / df_denom)
         push!(first_stage_F, F_k)
 
@@ -201,18 +201,19 @@ function feiv(df::DataFrame, formula::FormulaTerm;
 
     # --- Step 7: Diagnostics ---
 
-    # Wu-Hausman test
-    # Regress y on [first_stage_resids, X_endo_hat, X_exo]
-    # Test whether first_stage_resid coefficients are jointly zero
+    # Wu-Hausman test (regression form, as fixest and Stata's estat endog):
+    # F-test of the first-stage residuals added to the OLS regression of y
+    # on the endogenous and exogenous regressors.
     fs_resids = X_endo_dm .- X_endo_hat  # n × n_endo matrix of first-stage residuals
-    RHS_wh = hcat(fs_resids, UX)
-    beta_wh, resid_wh, _ = _ols_demeaned(y_dm, RHS_wh)
+    X_ols = hcat(X_endo_dm, X_exo_dm)
+    _, resid_ols, _ = _ols_demeaned(y_dm, X_ols)
+    _, resid_wh, _ = _ols_demeaned(y_dm, hcat(X_ols, fs_resids))
+    ssr_ols = sum(resid_ols .^ 2)
     ssr_wh = sum(resid_wh .^ 2)
-    ssr_2sls = sum(resid_corrected .^ 2)
 
     wh_df1 = Float64(n_endo)
-    wh_df2 = Float64(n - size(RHS_wh, 2) - n_fe)
-    wh_stat = ((ssr_2sls - ssr_wh) / wh_df1) / (ssr_wh / wh_df2)
+    wh_df2 = Float64(n - size(X_ols, 2) - n_endo - fe_dof(fes))
+    wh_stat = ((ssr_ols - ssr_wh) / wh_df1) / (ssr_wh / wh_df2)
     wh_p = 1.0 - cdf(FDist(wh_df1, wh_df2), max(wh_stat, 0.0))
     wu_hausman = (stat = wh_stat, p = wh_p, df1 = wh_df1, df2 = wh_df2)
 
