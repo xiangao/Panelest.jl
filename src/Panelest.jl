@@ -146,7 +146,7 @@ function Base.show(io::IO, m::PanelestModel)
     println(io, "Iterations: ", m.iterations)
     # Print coeftable
     ct = coeftable(m)
-    show(io, ct)
+    show(io, MIME"text/plain"(), ct)
 end
 
 function StatsBase.coeftable(m::PanelestModel)
