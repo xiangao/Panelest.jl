@@ -26,7 +26,7 @@ function fepois(df::DataFrame, formula::FormulaTerm; vcov = Vcov.simple(), weigh
     # Use 2-FE optimized solver if applicable
     use_2fe_opt = length(fes) == 2 && get(kwargs, :use_2fe_opt, true)
     
-    if has_fes && get(kwargs, :collapse, !use_2fe_opt)
+    if has_fes && weights === nothing && get(kwargs, :collapse, !use_2fe_opt)
         # Old collapse trick (good for 3+ FEs or when many covariates are identical)
         df_tmp = DataFrame(y=y, w=w_vec)
         for (i, fe) in enumerate(fes)
@@ -60,7 +60,7 @@ function fepois(df::DataFrame, formula::FormulaTerm; vcov = Vcov.simple(), weigh
             return PanelestModel(
                 res.beta, V, y .- mu_full, mu_full, eta_full,
                 res.converged, res.iterations, length(y),
-                Int(sum(w_vec)) - size(X, 2) - length(fes),
+                length(y) - size(X, 2) - length(fes),
                 formula, coefnames_X, :poisson, X_resid_full, res.XtWX
             )
         end
@@ -81,7 +81,7 @@ function fepois(df::DataFrame, formula::FormulaTerm; vcov = Vcov.simple(), weigh
         res.converged,
         res.iterations,
         length(y),
-        Int(sum(w_vec)) - size(X, 2) - length(fes),
+        length(y) - size(X, 2) - length(fes),
         formula,
         coefnames_X,
         :poisson,

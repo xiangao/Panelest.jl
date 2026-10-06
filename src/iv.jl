@@ -122,6 +122,7 @@ function feiv(df::DataFrame, formula::FormulaTerm;
 
     n = length(y)
     w_vec = weights === nothing ? ones(n) : Float64.(df[!, weights])
+    all(>=(0), w_vec) || throw(ArgumentError("weights must be non-negative"))
 
     # --- Step 2: FE absorption (demean all variables in one pass) ---
     has_fes = !isempty(fes)
@@ -134,16 +135,25 @@ function feiv(df::DataFrame, formula::FormulaTerm;
         # solve_residuals! modifies in-place via the column views
     end
 
-    y_dm = all_vars[:, 1]
-    X_exo_dm = all_vars[:, 2:1+p_exo]
-    X_endo_dm = all_vars[:, 2+p_exo:1+p_exo+n_endo]
-    Z_inst_dm = all_vars[:, 2+p_exo+n_endo:end]
+    # Weighted 2SLS: the estimation algebra and diagnostics run on sqrt(w)-scaled data
+    # (`*_dm`); the unscaled demeaned data (`*_u`) give residuals and the variance.
+    y_u      = all_vars[:, 1]
+    X_exo_u  = all_vars[:, 2:1+p_exo]
+    X_endo_u = all_vars[:, 2+p_exo:1+p_exo+n_endo]
+    Z_inst_u = all_vars[:, 2+p_exo+n_endo:end]
+    sw = sqrt.(w_vec)
+    y_dm      = sw .* y_u
+    X_exo_dm  = sw .* X_exo_u
+    X_endo_dm = sw .* X_endo_u
+    Z_inst_dm = sw .* Z_inst_u
 
     # --- Step 3: First stage(s) ---
     ZX = hcat(Z_inst_dm, X_exo_dm)  # first-stage regressors
+    ZX_u = hcat(Z_inst_u, X_exo_u)
     p_zx = size(ZX, 2)
 
     X_endo_hat = similar(X_endo_dm)
+    X_endo_hat_u = similar(X_endo_u)
     first_stage_F = Float64[]
     first_stages = PanelestModel[]
 
@@ -153,6 +163,7 @@ function feiv(df::DataFrame, formula::FormulaTerm;
         # Unrestricted: regress endo on [Z_inst, X_exo]
         beta_fs, resid_fs, XtX_fs = _ols_demeaned(u_k, ZX)
         X_endo_hat[:, k] = ZX * beta_fs
+        X_endo_hat_u[:, k] = ZX_u * beta_fs
         ssr_u = sum(resid_fs .^ 2)
 
         # Restricted: regress endo on X_exo only
@@ -174,10 +185,11 @@ function feiv(df::DataFrame, formula::FormulaTerm;
         fs_V = pinv(fs_XtWX) * (ssr_u / df_denom)
         fs_coefnames = vcat(string.(inst_vec), exo_names)
         fs_model = PanelestModel(
-            beta_fs, fs_V, resid_fs, ZX * beta_fs, ZX * beta_fs,
+            beta_fs, fs_V, X_endo_u[:, k] .- X_endo_hat_u[:, k],
+            X_endo_hat_u[:, k], X_endo_hat_u[:, k],
             true, 1, n, df_denom,
             formula, fs_coefnames, :iv_first_stage,
-            ZX, fs_XtWX
+            ZX_u, fs_XtWX
         )
         push!(first_stages, fs_model)
     end
@@ -189,14 +201,15 @@ function feiv(df::DataFrame, formula::FormulaTerm;
     # --- Step 5: Residual correction (use actual endo, not fitted) ---
     beta_endo = beta_2sls[1:n_endo]
     beta_exo = beta_2sls[n_endo+1:end]
-    resid_corrected = y_dm .- X_endo_dm * beta_endo .- X_exo_dm * beta_exo
+    resid_corrected = y_u .- X_endo_u * beta_endo .- X_exo_u * beta_exo
 
     # --- Step 6: Variance-covariance ---
     p_total = size(UX, 2)
     df_resid = n - p_total - fe_dof(fes)
 
     # Build a result-like NamedTuple for vcov_panelest
-    iv_res = (X_resid = UX, residuals = resid_corrected, XtWX = XtWX_2sls)
+    iv_res = (X_resid = hcat(X_endo_hat_u, X_exo_u), residuals = resid_corrected,
+              XtWX = XtWX_2sls)
     V = vcov_panelest(df, iv_res, vcov_type; weights = w_vec, fes = fes, scale_simple = true)
 
     # --- Step 7: Diagnostics ---
@@ -221,9 +234,10 @@ function feiv(df::DataFrame, formula::FormulaTerm;
     sargan = nothing
     if n_inst > n_endo
         ZX_full = hcat(Z_inst_dm, X_exo_dm)
-        _, resid_sargan, _ = _ols_demeaned(resid_corrected, ZX_full)
+        resid_w = sw .* resid_corrected
+        _, resid_sargan, _ = _ols_demeaned(resid_w, ZX_full)
         ssr_sargan = sum(resid_sargan .^ 2)
-        ssr_resid = sum(resid_corrected .^ 2)
+        ssr_resid = sum(resid_w .^ 2)
         sargan_df = n_inst - n_endo
         sargan_stat = n * (1.0 - ssr_sargan / ssr_resid)
         sargan_p = 1.0 - cdf(Chisq(sargan_df), max(sargan_stat, 0.0))

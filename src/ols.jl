@@ -17,7 +17,8 @@ function feols(df::DataFrame, formula::FormulaTerm; vcov = Vcov.simple(), weight
     n = length(y)
     p = size(X, 2)
 
-    w_vec = weights === nothing ? ones(n) : df[!, weights]
+    w_vec = weights === nothing ? ones(n) : Float64.(df[!, weights])
+    all(>=(0), w_vec) || throw(ArgumentError("weights must be non-negative"))
 
     if has_fes
         # Optimized: Direct demeaning + Cholesky solve
@@ -30,9 +31,9 @@ function feols(df::DataFrame, formula::FormulaTerm; vcov = Vcov.simple(), weight
         y_demeaned = vec(yX_cols[1])
         X_demeaned = hcat(yX_cols[2:end]...)
         
-        # Cholesky solve
-        XtX = X_demeaned' * X_demeaned
-        Xty = X_demeaned' * y_demeaned
+        # Cholesky solve of the weighted normal equations
+        XtX = X_demeaned' * (w_vec .* X_demeaned)
+        Xty = X_demeaned' * (w_vec .* y_demeaned)
         beta = try
             C = cholesky(Symmetric(XtX))
             C \ Xty
@@ -52,9 +53,9 @@ function feols(df::DataFrame, formula::FormulaTerm; vcov = Vcov.simple(), weight
         iterations = 1
         df_residual = n - p - fe_dof(fes)
     else
-        # Simple OLS
-        XtX = X' * X
-        Xty = X' * y
+        # Simple (weighted) OLS
+        XtX = X' * (w_vec .* X)
+        Xty = X' * (w_vec .* y)
         beta = cholesky(Symmetric(XtX)) \ Xty
         eta = X * beta
         mu = eta

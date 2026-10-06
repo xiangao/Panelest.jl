@@ -139,3 +139,18 @@ Three bugs, found while porting the DiD-with-continuous-treatment book chapter:
 Tests: "OLS standard errors match fixest" pins iid, HC1 and clustered SEs (no FE, one FE,
 two FE) and one-FE coefficients against R fixest values on a deterministic panel, plus a
 30-call determinism check. Run with `JULIA_NUM_THREADS=6` (the race needs threads).
+
+## Weights (fixed 2026-10-06)
+
+`weights` are fixest-style analytic weights. Until 2026-10-06 they were silently
+wrong: `feols` and `feiv` used them only in the fixed-effect demeaning (the
+no-FE path ignored them entirely), so weighted OLS/2SLS coefficients were
+unweighted; `vcov_panelest` used `sum(weights)` as the sample size, which made
+the variance negative when weights sum to less than the number of parameters
+(population shares); and the GLMs stored `Int(sum(weights))` as residual dof and
+applied their collapse-to-unique-cases shortcut with unit-weight algebra.
+Now: weighted normal equations in `feols`; `feiv` runs both stages and the
+diagnostics on sqrt(w)-scaled data and keeps unscaled residuals; `vcov_panelest`
+uses n for dof and weights the scores in the robust/cluster meat; the GLM collapse
+shortcut runs only without weights. Regression test: "weighted estimation
+matches fixest" in `test/test_vs_r.jl` (fixture `test/data/make_weights_ref.R`).

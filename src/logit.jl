@@ -21,7 +21,7 @@ function felogit(df::DataFrame, formula::FormulaTerm; vcov = Vcov.simple(), weig
 
     # --- Optimization: Unique Cases Trick (Berge Algorithm) ---
     has_fes = !isempty(fes)
-    if has_fes && get(kwargs, :collapse, true)
+    if has_fes && weights === nothing && get(kwargs, :collapse, true)
         df_tmp = DataFrame(y=y, w=w_vec)
         for (i, fe) in enumerate(fes)
             df_tmp[!, Symbol("fe$i")] = fe.refs
@@ -55,7 +55,7 @@ function felogit(df::DataFrame, formula::FormulaTerm; vcov = Vcov.simple(), weig
             return PanelestModel(
                 res.beta, V, y .- mu_full, mu_full, eta_full,
                 res.converged, res.iterations, length(y),
-                Int(sum(w_vec)) - size(X, 2) - length(fes),
+                length(y) - size(X, 2) - length(fes),
                 formula, coefnames_X, :logit, X_resid_full, res.XtWX
             )
         end
@@ -70,7 +70,7 @@ function felogit(df::DataFrame, formula::FormulaTerm; vcov = Vcov.simple(), weig
     return PanelestModel(
         res.beta, V, res.residuals, res.mu, res.eta,
         res.converged, res.iterations, length(y),
-        Int(sum(w_vec)) - size(X, 2) - length(fes),
+        length(y) - size(X, 2) - length(fes),
         formula, coefnames_X, :logit, res.X_resid, res.XtWX
     )
 end
