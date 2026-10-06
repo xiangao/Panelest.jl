@@ -275,21 +275,25 @@ end
 # `fes` are the absorbed fixed effects. `scale_simple = true` (OLS, IV) multiplies the
 # simple covariance by the residual variance; for likelihood models (Poisson, logit,
 # probit) the simple covariance is the inverse information and is left as is.
+#
+# Weights are fixest-style analytic weights. `res.residuals` and `res.X_resid` are
+# unweighted (demeaned) residuals and regressors and `res.XtWX` is the weighted bread,
+# so the score of observation i is weights[i] * X_resid[i, :] * residuals[i]. Degrees of
+# freedom count observations, not the sum of the weights, as in fixest.
 function vcov_panelest(df, res, vcov_method; weights = ones(size(res.X_resid, 1)),
                        fes = FixedEffect[], scale_simple = false)
-    n_weighted = sum(weights)
-    p = size(res.X_resid, 2)
+    n, p = size(res.X_resid)
     if vcov_method isa Vcov.SimpleCovariance
         V = pinv(res.XtWX)
         scale_simple || return V
-        sigma2 = sum(weights .* abs2.(res.residuals)) / (n_weighted - p - fe_dof(fes))
+        sigma2 = sum(weights .* abs2.(res.residuals)) / (n - p - fe_dof(fes))
         return V .* sigma2
     end
 
     v = Vcov.materialize(df, vcov_method)
     clusters = v isa Vcov.ClusterCovariance ? values(v.clusters) : nothing
     # Vcov scales by (N - 1) / dof_residual (clustered) or N / dof_residual (robust)
-    dof = Int(round(n_weighted - p - fe_dof(fes, clusters)))
-    dummy = PanelestDummyModel(res.X_resid, res.residuals, res.XtWX, dof)
+    dof = n - p - fe_dof(fes, clusters)
+    dummy = PanelestDummyModel(res.X_resid, weights .* res.residuals, res.XtWX, dof)
     return StatsAPI.vcov(dummy, v)
 end

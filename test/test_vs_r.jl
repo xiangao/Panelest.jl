@@ -78,3 +78,34 @@ end
         @test occursin("Std. Error", s)
     end
 end
+
+@testset "weighted estimation matches fixest (weights summing to about 1)" begin
+    dir = joinpath(@__DIR__, "data")
+    d   = _read_csv(joinpath(dir, "weights_sim.csv"))
+    ref = _read_csv(joinpath(dir, "weights_ref.csv"))
+    vcs = Dict("iid" => Vcov.simple(), "hetero" => Vcov.robust(), "cluster" => Vcov.cluster(:g))
+    fit(case) = begin
+        v = vcs[split(case, "_")[end]]
+        startswith(case, "ols_nofe")  ? feols(d, @formula(y ~ x1 + x2); weights = :wt, vcov = v) :
+        startswith(case, "ols_fe")    ? feols(d, @formula(y ~ x1 + x2 + fe(h)); weights = :wt, vcov = v) :
+        startswith(case, "iv_nofe")   ? feiv(d, @formula(y ~ x1 + x2); endo = :endo, inst = [:z1, :z2],
+                                             weights = :wt, vcov_type = v) :
+        startswith(case, "iv_fe")     ? feiv(d, @formula(y ~ x1 + x2 + fe(h)); endo = :endo,
+                                             inst = [:z1, :z2], weights = :wt, vcov_type = v) :
+        startswith(case, "pois_fe")   ? fepois(d, @formula(count ~ x1 + x2 + fe(h)); weights = :wt, vcov = v) :
+                                        felogit(d, @formula(bin ~ x1 + x2 + fe(h)); weights = :wt, vcov = v)
+    end
+    for case in unique(ref.case)
+        r = ref[(ref.case .== case) .& (ref.term .!= "ivf"), :]
+        m = fit(case)
+        idx = [findfirst(==(t), coefnames(m)) for t in r.term]
+        @testset "$case" begin
+            @test isapprox(coef(m)[idx], r.coef; rtol = 1e-6)
+            @test isapprox(stderror(m)[idx], r.se; rtol = 1e-5)
+            fi = findfirst((ref.case .== case) .& (ref.term .== "ivf"))
+            if fi !== nothing
+                @test isapprox(m.diagnostics.first_stage_F[1], ref.coef[fi]; rtol = 1e-6)
+            end
+        end
+    end
+end
